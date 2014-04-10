@@ -1,0 +1,84 @@
+/*
+ * dht11.c
+ *
+ * Created: 4/9/2014 8:10:18 PM
+ *  Author: ruizj
+ */ 
+
+#define F_CPU 16000000L
+#include <avr/io.h>
+#include "dht11.h"
+#include <util/delay.h>
+
+
+
+// Return values:
+// DHTLIB_OK
+// DHTLIB_ERROR_CHECKSUM
+// DHTLIB_ERROR_TIMEOUT
+int dht11Read(void)
+{
+	// BUFFER TO RECEIVE
+	uint8_t bits[5];
+	uint8_t cnt = 7;
+	uint8_t idx = 0;
+
+	// EMPTY BUFFER
+	for (uint8_t i=0; i< 5; i++) bits[i] = 0;
+
+	// REQUEST SAMPLE
+	DDRE |= (1 << 7); // set PE7 as output
+	PORTE &= ~(1 << 7); // set PE7 LOW
+	_delay_ms(18);
+	PORTE |= (1 << 7); // set PE7 HIGH
+	//delayMicroseconds(40); //Arduino code
+	_delay_us(40); //delay for 40 us
+	DDRE &= ~(1 << 7); // set PE7 as input
+
+	TCCR1B |= (1 << CS10); // set up 16-bit timer
+
+	// ACKNOWLEDGE or TIMEOUT
+	unsigned int loopCnt = 10000;
+	while(PINE & 0) // while pin == LOW
+	if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
+
+	loopCnt = 10000;
+	while(PINE & (1 << 7)) // while pin == HIGH
+	if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
+
+	// READ OUTPUT - 40 BITS => 5 BYTES or TIMEOUT
+	for (uint8_t i=0; i<40; i++)
+	{
+		loopCnt = 10000;
+		while(PINE & 0) // while pin == LOW
+		if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
+
+		TCNT1 = 0; // Reset timer value
+
+		loopCnt = 10000;
+		while(PINE & (1 << 7)) // while pin == HIGH
+		if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
+
+		if (TCNT1 >= 639) bits[idx] |= (1 << cnt);
+		if (cnt == 0)   // next byte?
+		{
+			cnt = 7;    // restart at MSB
+			idx++;      // next byte!
+		}
+		else cnt--;
+	}
+
+	// WRITE TO RIGHT VARS
+	// as bits[1] and bits[3] are always zero they are omitted in formulas.
+	// change to double to provide a decimal number
+	DHT11 dht;
+	dht.humidity    = bits[0];
+	dht.temperature = bits[2];
+
+	int sum = bits[0] + bits[2];
+
+	if (bits[4] != sum) return DHTLIB_ERROR_CHECKSUM;
+	return DHTLIB_OK;
+}
+//
+// END OF FILE
