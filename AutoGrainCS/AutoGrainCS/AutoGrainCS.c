@@ -115,7 +115,7 @@ int main(void)
     }
 }
 
-
+// Function to send data back to LabVIEW
 void Send_Data_to_LabVIEW()
 {
 	unsigned char m = 0;
@@ -143,7 +143,7 @@ void Send_Data_to_LabVIEW()
 					messageBuf[4] = 5;
 					messageBuf[5] = 6;
 					messageBuf[6] = 7;
-					TWI_Start_Transceiver_With_Data( messageBuf, 0x06 );
+					TWI_Start_Transceiver_With_Data( messageBuf, 0x07 );
 					
 					TWI_operation = SUCCESSFUL_TRANSMIT;
 				}

@@ -27,36 +27,36 @@ int dht11Read(void)
 	for (uint8_t i=0; i< 5; i++) bits[i] = 0;
 
 	// REQUEST SAMPLE
-	DDRE |= (1 << 7); // set PE7 as output
-	PORTE &= ~(1 << 7); // set PE7 LOW
+	DDRE |= (1 << PINE7); // set PE7 as output
+	PORTE &= ~(1 << PINE7); // set PE7 LOW
 	_delay_ms(18);
-	PORTE |= (1 << 7); // set PE7 HIGH
+	PORTE |= (1 << PINE77); // set PE7 HIGH
 	//delayMicroseconds(40); //Arduino code
 	_delay_us(40); //delay for 40 us
-	DDRE &= ~(1 << 7); // set PE7 as input
+	DDRE &= ~(1 << PINE7); // set PE7 as input
 
 	TCCR1B |= (1 << CS10); // set up 16-bit timer
 
 	// ACKNOWLEDGE or TIMEOUT
 	unsigned int loopCnt = 10000;
-	while(PINE & 0) // while pin == LOW
+	while(PINE7 & 0) // while pin == LOW
 	if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
 
 	loopCnt = 10000;
-	while(PINE & (1 << 7)) // while pin == HIGH
+	while(PINE & (1 << PINE7)) // while pin == HIGH
 	if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
 
 	// READ OUTPUT - 40 BITS => 5 BYTES or TIMEOUT
 	for (uint8_t i=0; i<40; i++)
 	{
 		loopCnt = 10000;
-		while(PINE & 0) // while pin == LOW
+		while(!(PINE & (1 << PINE7))) // while pin == LOW
 		if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
 
 		TCNT1 = 0; // Reset timer value
 
 		loopCnt = 10000;
-		while(PINE & (1 << 7)) // while pin == HIGH
+		while(PINE & (1 << PINE7)) // while pin == HIGH
 		if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
 
 		if (TCNT1 >= 639) bits[idx] |= (1 << cnt);
