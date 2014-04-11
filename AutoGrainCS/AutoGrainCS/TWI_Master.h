@@ -17,7 +17,7 @@
 ****************************************************************************/
 #define TWI_BUFFER_SIZE 18   // Slave Address + Memory start address + 16 data bytes (message size)
 
-#define TWI_TWBR            0x0C        // TWI Bit rate Register setting.
+#define TWI_TWBR            0x07        // TWI Bit rate Register setting.
                                         // See Application note for detailed 
                                         // information on setting this value.
 // Not used defines!
