@@ -63,9 +63,8 @@ int main(void)
       // Check if Send_Data command is in from LabVIEW
       n = 0;
       messageBuf[0] = 0x01;		// Use Gen. Call to activate I2C chip and tell it to transmit
-      TWI_Start_Transceiver_With_Data(messageBuf,1);
+      TWI_Start_Transceiver_With_Data(messageBuf,2);
       
-      //TWI_operation = REQUEST_DATA;
       TWI_operation = READ_DATA_FROM_BUFFER;
       
       while (~n)
@@ -77,17 +76,17 @@ int main(void)
 		      if ( TWI_statusReg.lastTransOK )
 		      {
 			      // Read I2C's data
-			      if (READ_DATA_FROM_BUFFER)
+			      if (TWI_operation == READ_DATA_FROM_BUFFER)
 			      { // Get the received data from the transceiver buffer
-				      TWI_Get_Data_From_Transceiver( messageBuf, 1 );
-				      USB_data = messageBuf[1];        // Store data.
+				      TWI_Get_Data_From_Transceiver( messageBuf, 2 );
+				      USB_data = messageBuf[1];        // Store data. 
 				      
 				      TWI_operation = REQUEST_DATA;    // Set next operation
 			      }
-			      else if (REQUEST_DATA)
+			      else if (TWI_operation == REQUEST_DATA)
 			      { // Request data from slave if command was not 0xFF
 				      messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (TRUE<<TWI_READ_BIT);
-				      TWI_Start_Transceiver_With_Data( messageBuf, 1 );
+				      TWI_Start_Transceiver_With_Data( messageBuf, 2 );
 				      
 				      TWI_operation = READ_DATA_FROM_BUFFER; // Set next operation
 			      }
@@ -133,22 +132,22 @@ void Send_Data_to_LabVIEW()
 			if ( TWI_statusReg.lastTransOK )
 			{
 				// Determine what action to take now
-				if (SEND_DATA)
+				if (TWI_operation == SEND_DATA)
 				{ // Send data to slave
-					//messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (FALSE<<TWI_READ_BIT);
-					messageBuf[0] = 1;
+					messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (FALSE<<TWI_READ_BIT);
+					//messageBuf[0] = 1;
 					messageBuf[1] = 2;
 					messageBuf[2] = 3;
 					messageBuf[3] = 4;
 					messageBuf[4] = 5;
 					messageBuf[5] = 6;
 					messageBuf[6] = 7;
-					TWI_Start_Transceiver_With_Data( messageBuf, 0x07 );
+					TWI_Start_Transceiver_With_Data( messageBuf, 7 );
 					
 					TWI_operation = SUCCESSFUL_TRANSMIT;
 				}
 				
-				else if (SUCCESSFUL_TRANSMIT)
+				else if (TWI_operation == SUCCESSFUL_TRANSMIT)
 				{
 					m = 1;
 					USB_data = 0x00;

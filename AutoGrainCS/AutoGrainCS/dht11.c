@@ -30,8 +30,7 @@ int dht11Read(void)
 	DDRE |= (1 << PINE7); // set PE7 as output
 	PORTE &= ~(1 << PINE7); // set PE7 LOW
 	_delay_ms(18);
-	PORTE |= (1 << PINE77); // set PE7 HIGH
-	//delayMicroseconds(40); //Arduino code
+	PORTE |= (1 << PINE7); // set PE7 HIGH
 	_delay_us(40); //delay for 40 us
 	DDRE &= ~(1 << PINE7); // set PE7 as input
 
