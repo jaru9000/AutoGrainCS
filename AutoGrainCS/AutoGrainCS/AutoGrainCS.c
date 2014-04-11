@@ -11,6 +11,7 @@
 #include <avr/cpufunc.h> // for _no_op
 
 #include "TWI_Master.h"
+#include "dht11.h"
 
 // Addr. and FT-X commands
 #define TWI_GEN_CALL	0x00
@@ -74,6 +75,7 @@ int main(void)
 
 				   if (USB_data == 0xFF)
 				   {
+					 //dht11Read();
 					 Send_Data_to_LabVIEW();
 				   }
 				   
@@ -102,19 +104,20 @@ void Send_Data_to_LabVIEW()
 	TWI_Start_Transceiver_With_Data(messageBuf,1);
 	
 	TWI_operation = SEND_DATA;
+	//DHT11 dht1;
 
 				if (TWI_operation == SEND_DATA)
 				{ 
 					// Send data to slave
 					messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (FALSE<<TWI_READ_BIT);
-					messageBuf[1] = 2;
-					messageBuf[2] = 3;
+					messageBuf[1] = 55; //measurement.humidity;
+					messageBuf[2] = 23; //measurement.temperature;
 					messageBuf[3] = 4;
 					messageBuf[4] = 5;
 					messageBuf[5] = 6;
 					messageBuf[6] = 7;
 					messageBuf[7] = 8;
-					TWI_Start_Transceiver_With_Data( messageBuf, 7 );
+					TWI_Start_Transceiver_With_Data( messageBuf, messageBuf_size );
 					while ( TWI_Transceiver_Busy() ); // Should wait for completion.
 				 }
 

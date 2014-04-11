@@ -97,13 +97,13 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AutoGrainCS.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="dht11.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="dht11.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="TWI_Master.c">
