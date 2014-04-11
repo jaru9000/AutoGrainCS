@@ -115,7 +115,7 @@ void Send_Data_to_LabVIEW()
 					messageBuf[6] = 7;
 					messageBuf[7] = 8;
 					TWI_Start_Transceiver_With_Data( messageBuf, 7 );
-					while ( TWI_Transceiver_Busy() );
+					while ( TWI_Transceiver_Busy() ); // Should wait for completion.
 				 }
 
 			if (!TWI_statusReg.lastTransOK )  // Got an error during the last transmission
