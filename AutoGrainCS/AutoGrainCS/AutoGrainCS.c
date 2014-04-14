@@ -3,7 +3,7 @@
  *
  * Created: 4/9/2014 8:09:45 PM
  *  Author: ruizj
- */ 
+ */
 
 
 #include <avr/io.h>
@@ -40,19 +40,19 @@ unsigned char TWI_Act_On_Failure_In_Last_Transmission ( unsigned char TWIerrorMs
 	// A failure has occurred, use TWIerrorMsg to determine the nature of the failure
 	// and take appropriate actions.
 	// Se header file for a list of possible failures messages.
-	
+
 	// Here is a simple sample, where if received a NACK on the slave address,
 	// then a retransmission will be initiated.
-	
+
 	if ( (TWIerrorMsg == TWI_MTX_ADR_NACK) | (TWIerrorMsg == TWI_MRX_ADR_NACK) )
 	TWI_Start_Transceiver();
-	
+
 	return TWIerrorMsg;
 }
 
 /* Main portion of program. Checks for request from LabVIEW and writes
-   sensor measurements back using the TWI method. */ 
-int main(void) 
+   sensor measurements back using the TWI method. */
+int main(void)
 {
 	TWI_Master_Initialise();
 	//__enable_interrupt();
@@ -64,50 +64,55 @@ int main(void)
 	  messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (TRUE<<TWI_READ_BIT);
       TWI_Start_Transceiver_With_Data(messageBuf,2);
 	  TWI_Get_Data_From_Transceiver( messageBuf, 2 ); // Read I2C's data
-      
-     
+
+
 	      // Check if the TWI Transceiver has completed an operation.
 		      // Check if the last operation was successful
 		      if ( TWI_statusReg.lastTransOK )
 		      {
-			      
-				      USB_data = messageBuf[1];        // Store data. 
+
+				      USB_data = messageBuf[1];        // Store data.
 
 				   if (USB_data == 0xFF)
 				   {
-					 //dht11Read();
-					 Send_Data_to_LabVIEW();
+              // declare dht11 struct;
+              DHT11 dht;
+              // pass address (reference) of dht struct in order for the
+              // dht11Read code to be able to set properties of the struct.
+              // also make sure to handle the return value (status)
+					    int status = dht11Read(&dht);
+					    Send_Data_to_LabVIEW();
 				   }
-				   
+
 			  }
-		      
+
 		      else // Got an error during the last transmission
 		      {
 			      // Use TWI status information to determine cause of failure and take appropriate actions.
 			      TWI_Act_On_Failure_In_Last_Transmission( TWI_Get_State_Info( ) );
 		      }
-	      
-	      
-	      
+
+
+
 	      // Do something else while waiting for the TWI Transceiver to complete the current operation
 	      //__no_operation(); // Put own code here.
 		  _NOP();
       }
-	  
+
    // }
 }
 
 // Function to send data back to LabVIEW
 void Send_Data_to_LabVIEW()
-{ 
+{
 	//messageBuf[0] = TWI_targetSlaveAddress;		// Use Gen. Call to activate I2C chip and tell it MCU will be writing
 	TWI_Start_Transceiver_With_Data(messageBuf,1);
-	
+
 	TWI_operation = SEND_DATA;
 	//DHT11 dht1;
 
 				if (TWI_operation == SEND_DATA)
-				{ 
+				{
 					// Send data to slave
 					messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (FALSE<<TWI_READ_BIT);
 					messageBuf[1] = 55; //measurement.humidity;
@@ -128,6 +133,6 @@ void Send_Data_to_LabVIEW()
 			}
 
 				USB_data = 0x00;
-		
-	
+
+
 }

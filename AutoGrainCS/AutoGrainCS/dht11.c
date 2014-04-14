@@ -3,7 +3,7 @@
  *
  * Created: 4/9/2014 8:10:18 PM
  *  Author: ruizj
- */ 
+ */
 
 #define F_CPU 16000000L
 #include <avr/io.h>
@@ -16,7 +16,7 @@
 // DHTLIB_OK
 // DHTLIB_ERROR_CHECKSUM
 // DHTLIB_ERROR_TIMEOUT
-int dht11Read(void)
+int dht11Read(DHT11 *measurement)
 {
 	// BUFFER TO RECEIVE
 	uint8_t bits[5];
@@ -70,9 +70,8 @@ int dht11Read(void)
 	// WRITE TO RIGHT VARS
 	// as bits[1] and bits[3] are always zero they are omitted in formulas.
 	// change to double to provide a decimal number
-	DHT11 dht;
-	dht.humidity    = bits[0];
-	dht.temperature = bits[2];
+	dht->humidity    = bits[0];
+	dht->temperature = bits[2];
 
 	int sum = bits[0] + bits[2];
 
