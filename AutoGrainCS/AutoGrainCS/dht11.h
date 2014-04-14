@@ -36,7 +36,7 @@ typedef struct measurement {
 	int temperature;
 } DHT11;
 
-int dht11Read(void);
+int dht11Read(DHT11 *measurement);
 
 #endif
 //
