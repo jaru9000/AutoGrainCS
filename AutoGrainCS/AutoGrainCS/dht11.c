@@ -5,7 +5,7 @@
  *  Author: ruizj
  */ 
 
-#define F_CPU 16000000L
+#define F_CPU 8000000L
 #include <avr/io.h>
 #include "dht11.h"
 #include <util/delay.h>
@@ -16,7 +16,7 @@
 // DHTLIB_OK
 // DHTLIB_ERROR_CHECKSUM
 // DHTLIB_ERROR_TIMEOUT
-int dht11Read(void)
+int dht11Read(DHT11 *measurement)
 {
 	// BUFFER TO RECEIVE
 	uint8_t bits[5];
@@ -44,10 +44,11 @@ int dht11Read(void)
 	loopCnt = 10000;
 	while(PINE & (1 << PINE7)) // while pin == HIGH
 	if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
-
+	DDRD |= (1 << PIND3);
 	// READ OUTPUT - 40 BITS => 5 BYTES or TIMEOUT
 	for (uint8_t i=0; i<40; i++)
 	{
+		PORTD |= (1 << PIND3);
 		loopCnt = 10000;
 		while(!(PINE & (1 << PINE7))) // while pin == LOW
 		if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
@@ -58,7 +59,9 @@ int dht11Read(void)
 		while(PINE & (1 << PINE7)) // while pin == HIGH
 		if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
 
-		if (TCNT1 >= 639) bits[idx] |= (1 << cnt);
+		if (TCNT1 >= 639){
+			PORTD &= ~(1 << PIND3);
+			 bits[idx] |= (1 << cnt);}
 		if (cnt == 0)   // next byte?
 		{
 			cnt = 7;    // restart at MSB
@@ -70,9 +73,9 @@ int dht11Read(void)
 	// WRITE TO RIGHT VARS
 	// as bits[1] and bits[3] are always zero they are omitted in formulas.
 	// change to double to provide a decimal number
-	DHT11 dht;
-	dht.humidity    = bits[0];
-	dht.temperature = bits[2];
+
+	measurement->humidity    = bits[0];
+	measurement->temperature = bits[2];
 
 	int sum = bits[0] + bits[2];
 

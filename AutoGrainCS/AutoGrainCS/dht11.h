@@ -31,12 +31,13 @@
 //extern int humidity;
 //extern int temperature;
 
-typedef struct measurement {
+typedef struct DHT11 {
 	int humidity;
 	int temperature;
 } DHT11;
 
-int dht11Read(void);
+
+int dht11Read(DHT11 *measurement);
 
 #endif
 //
