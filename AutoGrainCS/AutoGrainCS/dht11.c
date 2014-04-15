@@ -5,7 +5,7 @@
  *  Author: ruizj
  */ 
 
-#define F_CPU 1000000L
+#define F_CPU 8000000L
 #include <avr/io.h>
 #include "dht11.h"
 #include <util/delay.h>

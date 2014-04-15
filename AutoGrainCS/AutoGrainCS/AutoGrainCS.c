@@ -76,7 +76,7 @@ int main(void)
 
 				   if (USB_data == 0xFF)
 				   {
-					 //int status = dht11Read(&dht);
+					 int status = dht11Read(&dht);
 					 Send_Data_to_LabVIEW();
 				   }
 				   
