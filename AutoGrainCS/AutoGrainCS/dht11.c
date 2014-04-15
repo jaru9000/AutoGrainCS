@@ -70,12 +70,13 @@ int dht11Read(DHT11 *measurement)
 	// WRITE TO RIGHT VARS
 	// as bits[1] and bits[3] are always zero they are omitted in formulas.
 	// change to double to provide a decimal number
-	measurement->humidity    = 4;//bits[0];
-	measurement->temperature = 3;//bits[2];
-
 	int sum = bits[0] + bits[2];
 
 	if (bits[4] != sum) return DHTLIB_ERROR_CHECKSUM;
+	
+	measurement->humidity    = bits[0];
+	measurement->temperature = sum;//bits[2];
+	
 	return DHTLIB_OK;
 }
 //

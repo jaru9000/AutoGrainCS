@@ -31,6 +31,7 @@ unsigned char USB_data;
 unsigned char messageBuf[messageBuf_size];
 unsigned char TWI_operation;
 DHT11 dht;
+int status;
 
 void Send_Data_to_LabVIEW();
 
@@ -76,7 +77,7 @@ int main(void)
 
 				   if (USB_data == 0xFF)
 				   {
-					 int status = dht11Read(&dht);
+					 status = dht11Read(&dht);
 					 Send_Data_to_LabVIEW();
 				   }
 				   
@@ -110,8 +111,8 @@ void Send_Data_to_LabVIEW()
 				{ 
 					// Send data to slave
 					messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (FALSE<<TWI_READ_BIT);
-					messageBuf[1] = 5;//dht.humidity; //measurement.humidity;
-					messageBuf[2] = 4;//dht.temperature; //measurement.temperature;
+					messageBuf[1] = status;//dht.humidity;
+					messageBuf[2] = dht.temperature; 
 					messageBuf[3] = 4;
 					messageBuf[4] = 5;
 					messageBuf[5] = 6;
