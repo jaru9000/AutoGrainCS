@@ -106,6 +106,12 @@
     <Compile Include="dht11.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="icp.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="icp.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="TWI_Master.c">
       <SubType>compile</SubType>
     </Compile>

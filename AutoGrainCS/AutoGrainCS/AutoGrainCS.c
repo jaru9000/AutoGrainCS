@@ -9,9 +9,11 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/cpufunc.h> // for _no_op
+#include <avr/sleep.h>
 
 #include "TWI_Master.h"
 #include "dht11.h"
+#include "icp.h"
 
 // Addr. and FT-X commands
 #define TWI_GEN_CALL	0x00
@@ -32,8 +34,11 @@ unsigned char messageBuf[messageBuf_size];
 unsigned char TWI_operation;
 DHT11 dht;
 int status;
+icp_sample_t UTI_read_data[5];
+//icp_sample_t sample;
 
 void Send_Data_to_LabVIEW();
+void Get_UTI_Data();
 
 // Redo transmission if NACK is received
 // From Atmel
@@ -56,7 +61,11 @@ unsigned char TWI_Act_On_Failure_In_Last_Transmission ( unsigned char TWIerrorMs
    sensor measurements back using the TWI method. */ 
 int main(void) 
 {
+	DDRD |= (1<<PIND3);
+	PORTD |= (1<<PIND3);
 	TWI_Master_Initialise();
+	sleep_disable();
+	
 	//__enable_interrupt();
 	sei();
 
@@ -78,6 +87,7 @@ int main(void)
 				   if (USB_data == 0xFF)
 				   {
 					 status = dht11Read(&dht);
+					 Get_UTI_Data();
 					 Send_Data_to_LabVIEW();
 				   }
 				   
@@ -113,11 +123,11 @@ void Send_Data_to_LabVIEW()
 					messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (FALSE<<TWI_READ_BIT);
 					messageBuf[1] = status;//dht.humidity;
 					messageBuf[2] = dht.temperature; 
-					messageBuf[3] = 4;
-					messageBuf[4] = 5;
-					messageBuf[5] = 6;
-					messageBuf[6] = 7;
-					messageBuf[7] = 8;
+					messageBuf[3] = UTI_read_data[0];
+					messageBuf[4] = UTI_read_data[1];
+					messageBuf[5] = UTI_read_data[2];
+					messageBuf[6] = UTI_read_data[3];
+					messageBuf[7] = UTI_read_data[4];
 					TWI_Start_Transceiver_With_Data( messageBuf, messageBuf_size );
 					while ( TWI_Transceiver_Busy() ); // Should wait for completion.
 				 }
@@ -131,4 +141,24 @@ void Send_Data_to_LabVIEW()
 				USB_data = 0x00;
 		
 	
+}
+
+// Function that gets data from UTI
+void Get_UTI_Data()
+{
+	icp_init();
+	sleep_enable();
+	
+	//sample = icp_rx();
+	UTI_read_data[0] = icp_rx();
+	for (char i = 0; i < 4; i++)
+	{
+		//do
+		//{
+			UTI_read_data[i+1] = icp_rx();
+		//}
+		// Allow for variations in reading the capacitance values and an empty buffer (empty buffer returns full value)
+		//while (UTI_read_data[i+1] <= UTI_read_data[i]+200 || UTI_read_data[i+1] >= UTI_read_data[i]-200 || UTI_read_data[i+1] > 0x3D54);
+	}
+	sleep_cpu();
 }
