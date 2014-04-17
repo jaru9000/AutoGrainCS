@@ -25,7 +25,7 @@
 #define READ_DATA_FROM_BUFFER 0x03
 #define SUCCESSFUL_TRANSMIT	  0x04
 
-#define messageBuf_size		  0x08
+#define messageBuf_size		  0x0D
 
 // Other definitions
 unsigned char size_of_buffer_out;
@@ -34,8 +34,13 @@ unsigned char messageBuf[messageBuf_size];
 unsigned char TWI_operation;
 DHT11 dht;
 int status;
-icp_sample_t UTI_read_data[5];
-//icp_sample_t sample;
+//icp_sample_t UTI_read_data[5];
+int utiCount;
+int UTI_read_data[5];
+
+//Int to 8-bit
+#define low(x)   ((x) & 0xFF)
+#define high(x)   (((x)>>8) & 0xFF)
 
 void Send_Data_to_LabVIEW();
 void Get_UTI_Data();
@@ -123,11 +128,16 @@ void Send_Data_to_LabVIEW()
 					messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (FALSE<<TWI_READ_BIT);
 					messageBuf[1] = status;//dht.humidity;
 					messageBuf[2] = dht.temperature; 
-					messageBuf[3] = UTI_read_data[0];
-					messageBuf[4] = UTI_read_data[1];
-					messageBuf[5] = UTI_read_data[2];
-					messageBuf[6] = UTI_read_data[3];
-					messageBuf[7] = UTI_read_data[4];
+					messageBuf[3] = high(UTI_read_data[0]);
+					messageBuf[4] = low(UTI_read_data[0]);
+					messageBuf[5] = high(UTI_read_data[1]);
+					messageBuf[6] = low(UTI_read_data[1]);
+					messageBuf[7] = high(UTI_read_data[2]);
+					messageBuf[8] = low(UTI_read_data[2]);
+					messageBuf[9] = high(UTI_read_data[3]);
+					messageBuf[10] = low(UTI_read_data[3]);
+					messageBuf[11] = high(UTI_read_data[4]);
+					messageBuf[12] = low(UTI_read_data[4]);
 					TWI_Start_Transceiver_With_Data( messageBuf, messageBuf_size );
 					while ( TWI_Transceiver_Busy() ); // Should wait for completion.
 				 }
@@ -145,20 +155,36 @@ void Send_Data_to_LabVIEW()
 
 // Function that gets data from UTI
 void Get_UTI_Data()
-{
-	icp_init();
-	sleep_enable();
-	
+{	
+	DDRB |= (1 << PINB7);
+	PORTB |= (1 << PINB7); // UTI Power Down High for Active
+	for (int i=0; i < 4; i++) UTI_read_data[i] = 0;
+	//icp_init();
+	//sleep_enable();
+	DDRD &= ~(1 << PIND4);
+	PORTD &= ~(1 << PIND4);
 	//sample = icp_rx();
-	UTI_read_data[0] = icp_rx();
+	//UTI_read_data[0] = icp_rx();
 	for (char i = 0; i < 4; i++)
 	{
+		utiCount = 0;
+		while (!(PIND & (1 << PIND4))) {
+			_NOP();
+		}
+		
+		while(PIND & (1 << PIND4)) {
+			utiCount++;
+			//utiCount = i;
+		}
+		UTI_read_data[i] = utiCount;
+		
 		//do
 		//{
-			UTI_read_data[i+1] = icp_rx();
+			//UTI_read_data[i+1] = icp_rx();
 		//}
 		// Allow for variations in reading the capacitance values and an empty buffer (empty buffer returns full value)
 		//while (UTI_read_data[i+1] <= UTI_read_data[i]+200 || UTI_read_data[i+1] >= UTI_read_data[i]-200 || UTI_read_data[i+1] > 0x3D54);
 	}
-	sleep_cpu();
+	
+	//sleep_cpu();
 }
