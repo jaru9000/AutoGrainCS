@@ -171,11 +171,11 @@ void Get_UTI_Data()
 	for (char i = 0; i < 6; i++)
 	{
 		utiCount = 0;
-		while (!(PIND & (1 << PIND4))) {
+		while (bit_is_clear(PIND, PIND4)) {
 			_NOP();
 		}
 	
-		while(PIND & (1 << PIND4)) {
+		while(bit_is_set(PIND, PIND4)) {
 			utiCount++;
 			//utiCount = i;
 		}
