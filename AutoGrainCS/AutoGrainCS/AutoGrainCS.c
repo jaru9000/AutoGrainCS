@@ -17,7 +17,7 @@
 
 // Addr. and FT-X commands
 #define TWI_GEN_CALL	0x00
-#define TWI_targetSlaveAddress	0x22 // Same as general call because there is only one device on the line
+#define TWI_targetSlaveAddress	0x22 
 
 // Transmission States
 #define SEND_DATA             0x01
@@ -26,6 +26,7 @@
 #define SUCCESSFUL_TRANSMIT	  0x04
 
 #define messageBuf_size		  0x11
+#define TWI_init_messageBuf_size 0x02
 
 // Other definitions
 unsigned char size_of_buffer_out;
@@ -35,8 +36,10 @@ unsigned char TWI_operation;
 DHT11 dht;
 int status;
 //icp_sample_t UTI_read_data[5];
-int utiCount;
-int UTI_read_data[6];
+unsigned int utiCount;
+unsigned int UTI_read_data[6];
+icp_sample_t period;
+icp_sample_t period_old;
 
 
 //Int to 8-bit
@@ -78,8 +81,8 @@ int main(void)
     {
       // Check if Send_Data command is in from LabVIEW
 	  messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (TRUE<<TWI_READ_BIT);
-      TWI_Start_Transceiver_With_Data(messageBuf,2);
-	  TWI_Get_Data_From_Transceiver( messageBuf, 2 ); // Read I2C's data
+      TWI_Start_Transceiver_With_Data(messageBuf,TWI_init_messageBuf_size);
+	  TWI_Get_Data_From_Transceiver( messageBuf, TWI_init_messageBuf_size ); // Read I2C's data
       
      
 	      // Check if the TWI Transceiver has completed an operation.
@@ -92,7 +95,8 @@ int main(void)
 				   if (USB_data == 0xFF)
 				   {
 					 status = dht11Read(&dht);
-					 //Get_UTI_Data();
+					 sei();
+					 Get_UTI_Data();
 					 Send_Data_to_LabVIEW();
 				   }
 				   
@@ -117,8 +121,9 @@ int main(void)
 // Function to send data back to LabVIEW
 void Send_Data_to_LabVIEW()
 { 
+	
 	//messageBuf[0] = TWI_targetSlaveAddress;		// Use Gen. Call to activate I2C chip and tell it MCU will be writing
-	TWI_Start_Transceiver_With_Data(messageBuf,2);
+	TWI_Start_Transceiver_With_Data(messageBuf,TWI_init_messageBuf_size);
 	
 	TWI_operation = SEND_DATA;
 
@@ -126,8 +131,8 @@ void Send_Data_to_LabVIEW()
 				{ 
 					// Send data to slave
 					messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (FALSE<<TWI_READ_BIT);
-					messageBuf[1] = high(status);//dht.humidity;
-					messageBuf[2] = low(status);
+					messageBuf[1] = high(dht.humidity);
+					messageBuf[2] = low(dht.humidity);
 					messageBuf[3] = high(dht.temperature); 
 					messageBuf[4] = low(dht.temperature);  
 					messageBuf[5] = high(UTI_read_data[0]);
@@ -158,23 +163,24 @@ void Send_Data_to_LabVIEW()
 }
 
 // Function that gets data from UTI
-void Get_UTI_Data()
-{	
-	PORTB |= (1 << PINB7); // UTI Power Down High for Active
-	for (int i=0; i < 4; i++) UTI_read_data[i] = 0;
+/*void Get_UTI_Data()
+{	DDRD |= (1 << PIND3);
+	for (int i=0; i < 3; i++) UTI_read_data[i] = 0;
 	//icp_init();
 	//sleep_enable();
 	DDRD &= ~(1 << PIND4);
 	PORTD &= ~(1 << PIND4);
 	//sample = icp_rx();
 	//UTI_read_data[0] = icp_rx();
-	for (char i = 0; i < 6; i++)
+	PORTB |= (1 << PINB7); // UTI Power Down High for Active
+	for (unsigned char i = 0; i < 6; i++)
 	{
 		utiCount = 0;
 		while (bit_is_clear(PIND, PIND4)) {
+			PORTD |= (1 << PIND3);
 			_NOP();
-		}
-	
+		} 
+		
 		while(bit_is_set(PIND, PIND4)) {
 			utiCount++;
 			//utiCount = i;
@@ -187,8 +193,33 @@ void Get_UTI_Data()
 		//}
 		// Allow for variations in reading the capacitance values and an empty buffer (empty buffer returns full value)
 		//while (UTI_read_data[i+1] <= UTI_read_data[i]+200 || UTI_read_data[i+1] >= UTI_read_data[i]-200 || UTI_read_data[i+1] > 0x3D54);
+		
+	}
+	//PORTB &= ~(1 << PINB7); // UTI Power Down LOW for Power down
+	PORTB &= ~(1 << PIND3);
+	//sleep_cpu();
+} */
+
+// Function that gets data from UTI
+void Get_UTI_Data()
+{	
+	PORTB |= (1 << PINB7); // UTI Power Down High for Active
+	icp_init();
+	period = icp_rx();
+	period_old = period;
+	
+	for (unsigned char i = 0; i < 5; i++)
+	{
+		while (period_old == period || period == 0xFFFF) {
+			period = icp_rx();
+			//_NOP();
+		}
+		
+		UTI_read_data[i] = period;
+		period_old = period;
+		
+		
+		
 	}
 	PORTB &= ~(1 << PINB7); // UTI Power Down LOW for Power down
-	
-	//sleep_cpu();
 }

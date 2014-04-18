@@ -32,7 +32,7 @@
 #define	ICP_RX_QSIZE	(ICP_BUFSIZE+1)		/* 1 extra for queue management */
 #endif
 
-#define		ICP_SCALE	16,383U
+#define		ICP_SCALE	65536U
 //#define	ICP_SCALE	256U 
 #if		ICP_SCALE <= 256
 typedef	unsigned char icp_sample_t;
@@ -44,5 +44,6 @@ typedef	unsigned long  icp_total_t;
 
 void	icp_init(void);
 icp_sample_t icp_rx(void);
+icp_sample_t getPeriod(icp_sample_t period);
 
 #endif	/* AVR135_ICP_H_ */

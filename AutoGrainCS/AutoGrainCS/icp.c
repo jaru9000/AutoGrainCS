@@ -43,7 +43,7 @@
 #define	ICP_CTL_A	TCCR1A			/* ICP1 timer control				*/
 #define	ICP_CTL		TCCR1B			/* ICP1 interrupt control			*/
 #define	ICP_SENSE	ICES1			/* ICP1 interrupt sense (rising/falling) */
-#define	ICP_PRESCALE ((0 << CS12) | (0 << CS11) | (1 << CS10))	/* prescale /1 */
+#define	ICP_PRESCALE ((0 << CS12) | (1 << CS11) | (0 << CS10))	/* prescale /1 */
 
 #define	ICP_START_SENSE	(1 << ICP_SENSE)	/* start with rising edge	*/
 
@@ -126,7 +126,8 @@ static icp_sample_t icp_duty_compute(icp_timer_t pulsewidth, icp_timer_t period)
 		}
 		mask >>= 1;
 	} while (pulsewidth != 0 && mask != 0);
-	return(r);
+	//return(r);
+	return(period);
 }
 
 /**
@@ -185,6 +186,7 @@ ISR(TIMER1_COMPA_vect)
  */
 ISR(TIMER1_CAPT_vect)
 {
+	PORTB |= (1 << PINB7); // UTI Power Down High for Active
 	icp_timer_t icr, delta;
 	unsigned char tccr1b;
 
@@ -227,6 +229,7 @@ ISR(TIMER1_CAPT_vect)
 			 * Compute the duty cycle, and store the new reading.
 			 */
 			icp_enq(icp_duty_compute(delta,icp_period));
+			getPeriod(icp_period);
 	
 			/*
 			 * Check for a race condition where a (very) short pulse
@@ -329,4 +332,9 @@ icp_init(void)
 	TIMSK1	|= (1 << ICP_IE) | (1 << ICP_OC_IE);
 
 	return;
+}
+
+icp_sample_t getPeriod(icp_sample_t period)
+{
+	return period;
 }
