@@ -32,8 +32,8 @@
 #define	ICP_RX_QSIZE	(ICP_BUFSIZE+1)		/* 1 extra for queue management */
 #endif
 
-//#define		ICP_SCALE	16,383U
-#define	ICP_SCALE	256U 
+#define		ICP_SCALE	16,383U
+//#define	ICP_SCALE	256U 
 #if		ICP_SCALE <= 256
 typedef	unsigned char icp_sample_t;
 typedef	unsigned int  icp_total_t;

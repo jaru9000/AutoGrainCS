@@ -25,7 +25,7 @@
 #define READ_DATA_FROM_BUFFER 0x03
 #define SUCCESSFUL_TRANSMIT	  0x04
 
-#define messageBuf_size		  0x0D
+#define messageBuf_size		  0x11
 
 // Other definitions
 unsigned char size_of_buffer_out;
@@ -36,7 +36,8 @@ DHT11 dht;
 int status;
 //icp_sample_t UTI_read_data[5];
 int utiCount;
-int UTI_read_data[5];
+int UTI_read_data[6];
+
 
 //Int to 8-bit
 #define low(x)   ((x) & 0xFF)
@@ -66,8 +67,7 @@ unsigned char TWI_Act_On_Failure_In_Last_Transmission ( unsigned char TWIerrorMs
    sensor measurements back using the TWI method. */ 
 int main(void) 
 {
-	DDRD |= (1<<PIND3);
-	PORTD |= (1<<PIND3);
+	DDRB |= (1 << PINB7); //UTI_PD ... OUTPUT
 	TWI_Master_Initialise();
 	sleep_disable();
 	
@@ -92,7 +92,7 @@ int main(void)
 				   if (USB_data == 0xFF)
 				   {
 					 status = dht11Read(&dht);
-					 Get_UTI_Data();
+					 //Get_UTI_Data();
 					 Send_Data_to_LabVIEW();
 				   }
 				   
@@ -118,7 +118,7 @@ int main(void)
 void Send_Data_to_LabVIEW()
 { 
 	//messageBuf[0] = TWI_targetSlaveAddress;		// Use Gen. Call to activate I2C chip and tell it MCU will be writing
-	TWI_Start_Transceiver_With_Data(messageBuf,1);
+	TWI_Start_Transceiver_With_Data(messageBuf,2);
 	
 	TWI_operation = SEND_DATA;
 
@@ -126,18 +126,22 @@ void Send_Data_to_LabVIEW()
 				{ 
 					// Send data to slave
 					messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (FALSE<<TWI_READ_BIT);
-					messageBuf[1] = status;//dht.humidity;
-					messageBuf[2] = dht.temperature; 
-					messageBuf[3] = high(UTI_read_data[0]);
-					messageBuf[4] = low(UTI_read_data[0]);
-					messageBuf[5] = high(UTI_read_data[1]);
-					messageBuf[6] = low(UTI_read_data[1]);
-					messageBuf[7] = high(UTI_read_data[2]);
-					messageBuf[8] = low(UTI_read_data[2]);
-					messageBuf[9] = high(UTI_read_data[3]);
-					messageBuf[10] = low(UTI_read_data[3]);
-					messageBuf[11] = high(UTI_read_data[4]);
-					messageBuf[12] = low(UTI_read_data[4]);
+					messageBuf[1] = high(status);//dht.humidity;
+					messageBuf[2] = low(status);
+					messageBuf[3] = high(dht.temperature); 
+					messageBuf[4] = low(dht.temperature);  
+					messageBuf[5] = high(UTI_read_data[0]);
+					messageBuf[6] = low(UTI_read_data[0]);
+					messageBuf[7] = high(UTI_read_data[1]);
+					messageBuf[8] = low(UTI_read_data[1]);
+					messageBuf[9] = high(UTI_read_data[2]);
+					messageBuf[10] = low(UTI_read_data[2]);
+					messageBuf[11] = high(UTI_read_data[3]);
+					messageBuf[12] = low(UTI_read_data[3]);
+					messageBuf[13] = high(UTI_read_data[4]);
+					messageBuf[14] = low(UTI_read_data[4]);
+					messageBuf[15] = high(UTI_read_data[5]);
+					messageBuf[16] = low(UTI_read_data[5]);
 					TWI_Start_Transceiver_With_Data( messageBuf, messageBuf_size );
 					while ( TWI_Transceiver_Busy() ); // Should wait for completion.
 				 }
@@ -156,7 +160,6 @@ void Send_Data_to_LabVIEW()
 // Function that gets data from UTI
 void Get_UTI_Data()
 {	
-	DDRB |= (1 << PINB7);
 	PORTB |= (1 << PINB7); // UTI Power Down High for Active
 	for (int i=0; i < 4; i++) UTI_read_data[i] = 0;
 	//icp_init();
@@ -165,13 +168,13 @@ void Get_UTI_Data()
 	PORTD &= ~(1 << PIND4);
 	//sample = icp_rx();
 	//UTI_read_data[0] = icp_rx();
-	for (char i = 0; i < 4; i++)
+	for (char i = 0; i < 6; i++)
 	{
 		utiCount = 0;
 		while (!(PIND & (1 << PIND4))) {
 			_NOP();
 		}
-		
+	
 		while(PIND & (1 << PIND4)) {
 			utiCount++;
 			//utiCount = i;
@@ -185,6 +188,7 @@ void Get_UTI_Data()
 		// Allow for variations in reading the capacitance values and an empty buffer (empty buffer returns full value)
 		//while (UTI_read_data[i+1] <= UTI_read_data[i]+200 || UTI_read_data[i+1] >= UTI_read_data[i]-200 || UTI_read_data[i+1] > 0x3D54);
 	}
+	PORTB &= ~(1 << PINB7); // UTI Power Down LOW for Power down
 	
 	//sleep_cpu();
 }

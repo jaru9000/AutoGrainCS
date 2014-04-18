@@ -9,6 +9,7 @@
 #include <avr/io.h>
 #include "dht11.h"
 #include <util/delay.h>
+#include <avr/sfr_defs.h>
 
 
 
@@ -18,6 +19,8 @@
 // DHTLIB_ERROR_TIMEOUT
 int dht11Read(DHT11 *measurement)
 {
+	DDRD |= (1 << PIND3);
+	PORTD |= (1 << PIND3);
 	// BUFFER TO RECEIVE
 	uint8_t bits[5];
 	uint8_t cnt = 7;
@@ -33,36 +36,36 @@ int dht11Read(DHT11 *measurement)
 	PORTE |= (1 << PINE7); // set PE7 HIGH
 	_delay_us(40); //delay for 40 us
 	DDRE &= ~(1 << PINE7); // set PE7 as input
+	//PORTE &= ~(1 << PIND4);
 
 	//TCCR1B |= (1 << CS10); // set up 16-bit timer
 
 	// ACKNOWLEDGE or TIMEOUT
 	unsigned int loopCnt = 10000;
-	while(!(PINE & (1 << PINE7))) // while pin == LOW
+	while(bit_is_clear(PINE, PINE7)) // while pin == LOW
 	if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
 
 	loopCnt = 10000;
-	while(PINE & (1 << PINE7)) // while pin == HIGH
+	while(bit_is_set(PINE, PINE7)) // while pin == HIGH
 	if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
-
+	PORTD &= ~(1 << PIND3);
 	// READ OUTPUT - 40 BITS => 5 BYTES or TIMEOUT
 	for (uint8_t i=0; i<40; i++)
 	{
 		loopCnt = 10000;
-		while(!(PINE & (1 << PINE7))) // while pin == LOW
+		while(bit_is_clear(PINE, PINE7)) // while pin == LOW
 		if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
 
 		//TCNT1 = 0; // Reset timer value
 
 		loopCnt = 10000;
-		while(PINE & (1 << PINE7)) // while pin == HIGH
+		while(bit_is_set(PINE, PINE7)) // while pin == HIGH
 		if (loopCnt-- == 0) return DHTLIB_ERROR_TIMEOUT;
 		_delay_us(40);
-
+		
 		//if (TCNT1 >= 319) bits[idx] |= (1 << cnt);
-		if (PINE & (1 << PINE7)) {//bits[idx] |= (1 << cnt);
-		//if (bit_is_set(PINE, PINE7)){
-			PORTD &= (1<<PIND3);
+		//if (PINE & (1 << PINE7)) {//bits[idx] |= (1 << cnt);
+		if (bit_is_set(PINE, PINE7)){
 			 bits[idx] |= (1 << cnt);
 		}
 		if (cnt == 0)   // next byte?
