@@ -13,7 +13,7 @@
 
 #include "TWI_Master.h"
 #include "dht11.h"
-#include "icp1.h"
+#include "icp.h"
 
 // Addr. and FT-X commands
 #define TWI_GEN_CALL	0x00
@@ -25,7 +25,7 @@
 #define READ_DATA_FROM_BUFFER 0x03
 #define SUCCESSFUL_TRANSMIT	  0x04
 
-#define messageBuf_size		  0x29
+#define messageBuf_size		  0x11
 #define TWI_init_messageBuf_size 0x02
 
 // Other definitions
@@ -35,12 +35,11 @@ unsigned char messageBuf[messageBuf_size];
 unsigned char TWI_operation;
 DHT11 dht;
 int status;
-
+//icp_sample_t UTI_read_data[5];
 unsigned int utiCount;
-unsigned int UTI_read_data[18];
+unsigned int UTI_read_data[6];
 icp_sample_t period;
 icp_sample_t period_old;
-
 
 
 //Int to 8-bit
@@ -148,32 +147,6 @@ void Send_Data_to_LabVIEW()
 					messageBuf[14] = low(UTI_read_data[4]);
 					messageBuf[15] = high(UTI_read_data[5]);
 					messageBuf[16] = low(UTI_read_data[5]);
-					
-					messageBuf[17] = high(UTI_read_data[6]);
-					messageBuf[18] = low(UTI_read_data[6]);
-					messageBuf[19] = high(UTI_read_data[7]);
-					messageBuf[20] = low(UTI_read_data[7]);
-					messageBuf[21] = high(UTI_read_data[8]);
-					messageBuf[22] = low(UTI_read_data[8]);
-					messageBuf[23] = high(UTI_read_data[9]);
-					messageBuf[24] = low(UTI_read_data[9]);
-					messageBuf[25] = high(UTI_read_data[10]);
-					messageBuf[26] = low(UTI_read_data[10]);
-					messageBuf[27] = high(UTI_read_data[11]);
-					messageBuf[28] = low(UTI_read_data[11]);
-					
-					messageBuf[29] = high(UTI_read_data[12]);
-					messageBuf[30] = low(UTI_read_data[12]);
-					messageBuf[31] = high(UTI_read_data[13]);
-					messageBuf[32] = low(UTI_read_data[13]);
-					messageBuf[33] = high(UTI_read_data[14]);
-					messageBuf[34] = low(UTI_read_data[14]);
-					messageBuf[35] = high(UTI_read_data[15]);
-					messageBuf[36] = low(UTI_read_data[15]);
-					messageBuf[37] = high(UTI_read_data[16]);
-					messageBuf[38] = low(UTI_read_data[16]);
-					messageBuf[39] = high(UTI_read_data[17]);
-					messageBuf[40] = low(UTI_read_data[17]);
 					TWI_Start_Transceiver_With_Data( messageBuf, messageBuf_size );
 					while ( TWI_Transceiver_Busy() ); // Should wait for completion.
 				 }
@@ -189,20 +162,64 @@ void Send_Data_to_LabVIEW()
 	
 }
 
+// Function that gets data from UTI
+/*void Get_UTI_Data()
+{	DDRD |= (1 << PIND3);
+	for (int i=0; i < 3; i++) UTI_read_data[i] = 0;
+	//icp_init();
+	//sleep_enable();
+	DDRD &= ~(1 << PIND4);
+	PORTD &= ~(1 << PIND4);
+	//sample = icp_rx();
+	//UTI_read_data[0] = icp_rx();
+	PORTB |= (1 << PINB7); // UTI Power Down High for Active
+	for (unsigned char i = 0; i < 6; i++)
+	{
+		utiCount = 0;
+		while (bit_is_clear(PIND, PIND4)) {
+			PORTD |= (1 << PIND3);
+			_NOP();
+		} 
+		
+		while(bit_is_set(PIND, PIND4)) {
+			utiCount++;
+			//utiCount = i;
+		}
+		UTI_read_data[i] = utiCount;
+		
+		//do
+		//{
+			//UTI_read_data[i+1] = icp_rx();
+		//}
+		// Allow for variations in reading the capacitance values and an empty buffer (empty buffer returns full value)
+		//while (UTI_read_data[i+1] <= UTI_read_data[i]+200 || UTI_read_data[i+1] >= UTI_read_data[i]-200 || UTI_read_data[i+1] > 0x3D54);
+		
+	}
+	//PORTB &= ~(1 << PINB7); // UTI Power Down LOW for Power down
+	PORTB &= ~(1 << PIND3);
+	//sleep_cpu();
+} */
 
 // Function that gets data from UTI
 void Get_UTI_Data()
 {	
 	PORTB |= (1 << PINB7); // UTI Power Down High for Active
 	icp_init();
- 
-	int go = 1;
-	while (go == 1) { go = icp_continue();}
-	TIMSK1	&= (~(1 << ICIE1)); //disable interrupt
-	PORTB &= ~(1 << PINB7); // UTI Power Down LOW for Power down
+	period = icp_rx();
+	period_old = period;
 	
-	for (unsigned char i = 0; i < 18; i++) {
-		UTI_read_data[i] = getPeriod(i);
+	for (unsigned char i = 0; i < 5; i++)
+	{
+		while (period_old == period || period == 0xFFFF || period == 0x0000) {
+			period = icp_rx();
+			//_NOP();
+		}
+		
+		UTI_read_data[i] = period;
+		period_old = period;
+		
+		
 		
 	}
+	PORTB &= ~(1 << PINB7); // UTI Power Down LOW for Power down
 }

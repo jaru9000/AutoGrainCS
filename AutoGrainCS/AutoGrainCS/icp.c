@@ -112,7 +112,7 @@ __inline__
 
 static icp_sample_t icp_duty_compute(icp_timer_t pulsewidth, icp_timer_t period)
 {
-	icp_sample_t r, mask;
+	/*icp_sample_t r, mask;
 
 	mask = ICP_SCALE >> 1;
 	r = 0;
@@ -125,7 +125,7 @@ static icp_sample_t icp_duty_compute(icp_timer_t pulsewidth, icp_timer_t period)
 			pulsewidth -= period;
 		}
 		mask >>= 1;
-	} while (pulsewidth != 0 && mask != 0);
+	} while (pulsewidth != 0 && mask != 0);*/
 	//return(r);
 	return(period);
 }
@@ -229,7 +229,7 @@ ISR(TIMER1_CAPT_vect)
 			 * Compute the duty cycle, and store the new reading.
 			 */
 			icp_enq(icp_duty_compute(delta,icp_period));
-			getPeriod(icp_period);
+			//getPeriod(icp_period);
 	
 			/*
 			 * Check for a race condition where a (very) short pulse
@@ -309,6 +309,8 @@ icp_rx(void)
 void
 icp_init(void)
 {
+	DDRD |= (1 << PIND4);
+	PORTD &= ~(1 << PIND4);
 	/*
 	 * Nothing interesting to set in TCCR1A
 	 */
