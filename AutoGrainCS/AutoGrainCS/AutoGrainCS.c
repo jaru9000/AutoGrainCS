@@ -32,7 +32,6 @@
 unsigned char size_of_buffer_out;
 unsigned char USB_data;
 unsigned char messageBuf[messageBuf_size];
-unsigned char TWI_operation;
 DHT11 dht;
 int status;
 
@@ -75,7 +74,7 @@ int main(void)
 	TWI_Master_Initialise();
 	sleep_disable();
 	
-	//__enable_interrupt();
+	//enable interrupts
 	sei();
 
     while(1)
@@ -126,10 +125,6 @@ void Send_Data_to_LabVIEW()
 	//messageBuf[0] = TWI_targetSlaveAddress;		// Use Gen. Call to activate I2C chip and tell it MCU will be writing
 	TWI_Start_Transceiver_With_Data(messageBuf,TWI_init_messageBuf_size);
 	
-	TWI_operation = SEND_DATA;
-
-				if (TWI_operation == SEND_DATA)
-				{ 
 					// Send data to slave
 					messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (FALSE<<TWI_READ_BIT);
 					messageBuf[1] = high(dht.humidity);
@@ -176,7 +171,7 @@ void Send_Data_to_LabVIEW()
 					messageBuf[40] = low(UTI_read_data[17]);
 					TWI_Start_Transceiver_With_Data( messageBuf, messageBuf_size );
 					while ( TWI_Transceiver_Busy() ); // Should wait for completion.
-				 }
+				 
 
 			if (!TWI_statusReg.lastTransOK )  // Got an error during the last transmission
 			{
@@ -194,15 +189,15 @@ void Send_Data_to_LabVIEW()
 void Get_UTI_Data()
 {	
 	PORTB |= (1 << PINB7); // UTI Power Down High for Active
-	icp_init();
+	icp_init(); // begin UTI reading
  
 	int go = 1;
-	while (go == 1) { go = icp_continue();}
+	while (go == 1) { go = icp_continue();} // continue getting data until specified amount is obtained
 	TIMSK1	&= (~(1 << ICIE1)); //disable interrupt
 	PORTB &= ~(1 << PINB7); // UTI Power Down LOW for Power down
 	
 	for (unsigned char i = 0; i < 18; i++) {
-		UTI_read_data[i] = getPeriod(i);
+		UTI_read_data[i] = getPeriod(i); // get UTI period counts
 		
 	}
 }
