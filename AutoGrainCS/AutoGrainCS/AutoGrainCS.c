@@ -3,6 +3,11 @@
  *
  * Created: 4/9/2014 8:09:45 PM
  *  Author: ruizj
+ *
+ * Purpose: This program is the main program of the Automated Moisture Control System designed by
+ * Jason Ruiz & Thomas Zirkle for the senior design project at Andrews University 2014. It handles 
+ * communication via I2C and USB which interfaces with a LabVIEW program. Measurements are taken from
+ * sensors connected to the Atmega256rfr2. The clock rate used is 1 MHz. 
  */ 
 
 
@@ -30,17 +35,12 @@
 
 // Other definitions
 unsigned char size_of_buffer_out;
-unsigned char USB_data;
-unsigned char messageBuf[messageBuf_size];
-DHT11 dht;
-int status;
+unsigned char USB_data; // data received from LabVIEW
+unsigned char messageBuf[messageBuf_size]; // buffer of data to be transmitted
+DHT11 dht; // Struct with DHT11 data
+int status; // status of DHT11
 
-unsigned int utiCount;
-unsigned int UTI_read_data[18];
-icp_sample_t period;
-icp_sample_t period_old;
-
-
+unsigned int UTI_read_data[18]; // Data received from UTI
 
 //Int to 8-bit
 #define low(x)   ((x) & 0xFF)
@@ -125,7 +125,7 @@ void Send_Data_to_LabVIEW()
 	//messageBuf[0] = TWI_targetSlaveAddress;		// Use Gen. Call to activate I2C chip and tell it MCU will be writing
 	TWI_Start_Transceiver_With_Data(messageBuf,TWI_init_messageBuf_size);
 	
-					// Send data to slave
+					// Prepare data to send
 					messageBuf[0] = (TWI_targetSlaveAddress<<TWI_ADR_BITS) | (FALSE<<TWI_READ_BIT);
 					messageBuf[1] = high(dht.humidity);
 					messageBuf[2] = low(dht.humidity);
@@ -169,7 +169,8 @@ void Send_Data_to_LabVIEW()
 					messageBuf[38] = low(UTI_read_data[16]);
 					messageBuf[39] = high(UTI_read_data[17]);
 					messageBuf[40] = low(UTI_read_data[17]);
-					TWI_Start_Transceiver_With_Data( messageBuf, messageBuf_size );
+					
+					TWI_Start_Transceiver_With_Data( messageBuf, messageBuf_size ); // Send data to slave
 					while ( TWI_Transceiver_Busy() ); // Should wait for completion.
 				 
 

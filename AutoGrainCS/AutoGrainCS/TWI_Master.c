@@ -15,6 +15,9 @@
 * 12/19/08	Added Random (Memory) read function. Requires repeated Start without 
 *				Stop read function.	-jkl
 *
+* This code was slightly modified for implementation with the Atmega256rfr2
+* with a 1 MHz clock. Functions here perform necessary actions to set the MCU
+* as the master and transmit/receive data from the slave.
 ****************************************************************************/
 
 #include <avr/interrupt.h>
